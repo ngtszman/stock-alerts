@@ -103,7 +103,7 @@
                  resultDiv.appendChild( header );
              }
              createTable( history, "resultDiv", ["date","open","low","high","close","volume"], ["Date","Open","Low","High","Close","Volume"] );
-             createChart( history, "visualisation", "date", "close" , null, ["Price"]);
+             createChart( history, "visualisation", "date", ["close"] , ["Price"]);
          }
 
          function getCSVFile( event ){

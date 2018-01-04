@@ -9,7 +9,7 @@ import ar.com.sac.model.operations.Operator;
 import ar.com.sac.model.operations.OperatorAND;
 import ar.com.sac.model.operations.OperatorGREATERThan;
 import ar.com.sac.model.operations.OperatorLESSThan;
-import ar.com.sac.model.simulator.SimulatorRecord;
+import ar.com.sac.model.simulator.PositionRecord;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,7 +24,7 @@ public class ExpressionService {
       expression = expression.replaceAll( "\\[SYMBOL\\]", simulation.getCurrentSymbol() );
       double operationPerfomance = 0d;
       double operationPerfomancePercentage = 0d;
-      SimulatorRecord currentPosition = simulation.getPosition( simulation.getCurrentSymbol() );
+      PositionRecord currentPosition = simulation.getPosition( simulation.getCurrentSymbol() );
       if( currentPosition != null ){
          double sellValue = simulation.getCurrentLastQuote().getClose().doubleValue() * currentPosition.getOrderAmount();
          double sellCommission = simulation.getParameters().getCommissionPercentage() * sellValue / 100d;

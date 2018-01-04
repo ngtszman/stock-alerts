@@ -2,6 +2,7 @@ package ar.com.sac.services;
 
 import ar.com.sac.model.Quote;
 import ar.com.sac.model.operations.Operator;
+import ar.com.sac.model.simulator.PositionRecord;
 import ar.com.sac.model.simulator.SimulationResults;
 import ar.com.sac.model.simulator.SimulatorParameters;
 import ar.com.sac.model.simulator.SimulatorRecord;
@@ -28,12 +29,13 @@ public class Simulation {
    
    //simulation variables
    private String currentSymbol;
+   private Calendar currentDate;
    private Quote currentLastQuote;
    private List<Quote> allTheQuotes = new ArrayList<>(); //all The quotes between from and to years
    //This map is because not all the quotes begins at the same date
    private Map<String, Integer> indexPerSymbolMap  = new HashMap<>();
    private Map<String, List<Quote>> symbolToQuotesMap  = new HashMap<>();
-   private Map<String, SimulatorRecord> positionsMap = new HashMap<>();
+   private Map<String, PositionRecord> positionsMap = new HashMap<>();
    private Map<String, SymbolPerformanceStatistics> performanceBySymbolMap = new HashMap<>();
    private SimulatorRecord lastSimulatorRecord;
 
@@ -52,6 +54,7 @@ public class Simulation {
          int index;
          for( Quote currentQuote: allTheQuotes){
             currentSymbol = currentQuote.getSymbol();
+            
             quotesAux = symbolToQuotesMap.get( currentSymbol );
             index = indexPerSymbolMap.get( currentSymbol );
             if(index < 0){
@@ -59,6 +62,8 @@ public class Simulation {
             }
             stockSimulatorService.setSimulationQuotes( quotesAux.subList( index, quotesAux.size() ));
             currentLastQuote = stockSimulatorService.getStock( currentSymbol ).getLastQuote();
+            verifyChangeOfDate( currentLastQuote.getDate() );
+            updateLastPriceOnPosition( currentLastQuote );
             if(!tryBuy()){
                if(!trySell()){
                   tryStopLoss();
@@ -72,6 +77,43 @@ public class Simulation {
          e.printStackTrace();
          throw new RuntimeException( "Error running simulation" );
       }
+   }
+
+   private void updateLastPriceOnPosition( Quote quote ) {
+      PositionRecord positionRecord = positionsMap.get( quote.getSymbol() );
+      if( positionRecord == null){
+         return;
+      }
+      if( quote.getClose() != null ){
+         positionRecord.setLastPrice(  quote.getClose().doubleValue() );
+      }
+   }
+
+   private void verifyChangeOfDate( Calendar currentQuoteDate ) {
+      if( currentQuoteDate.equals( currentDate ) ){
+         return;
+      }
+      double positionsSum = 0d;
+      //create capitalBalance at currentDate;
+      SimulatorRecord capitalRecord = new SimulatorRecord();
+      capitalRecord.setId( lastSimulatorRecord.getId() + 1 );
+      capitalRecord.setOrderAmount( 0d );
+      capitalRecord.setOrderPrice( 0d );
+      capitalRecord.setOrderDate( currentDate );
+      capitalRecord.setLiquity( lastSimulatorRecord.getLiquity() );
+      capitalRecord.setOrderTotalCost( 0 );
+      capitalRecord.setOrderType( "Capital" );
+      for( PositionRecord positionRecord : positionsMap.values()){
+         positionsSum += (positionRecord.getLastPrice() * positionRecord.getOrderAmount());
+      }
+      
+      capitalRecord.setCapitalBalance( lastSimulatorRecord.getLiquity() + positionsSum );
+      capitalRecord.setOperationPerformance( 0 );
+      capitalRecord.setOperationDays( 0 );
+
+      lastSimulatorRecord = capitalRecord;
+      simulationResults.addRecord( lastSimulatorRecord );
+      currentDate = currentQuoteDate;
    }
 
    private void completeSimulationResults() {
@@ -90,7 +132,8 @@ public class Simulation {
 
    private void initSimulationVariables() throws IOException {
       lastSimulatorRecord = new SimulatorRecord();
-      lastSimulatorRecord.setOrderDate( new GregorianCalendar(parameters.getYearFrom(),0,1) );
+      currentDate = new GregorianCalendar(parameters.getYearFrom(),0,1);
+      lastSimulatorRecord.setOrderDate( currentDate );
       lastSimulatorRecord.setId( 0 );
       lastSimulatorRecord.setCapitalBalance( parameters.getInitialCapital() );
       lastSimulatorRecord.setLiquity( parameters.getInitialCapital() );
@@ -150,7 +193,7 @@ public class Simulation {
          return false;
       }
       
-      SimulatorRecord positionRecord = positionsMap.get( currentSymbol );
+      PositionRecord positionRecord = positionsMap.get( currentSymbol );
       
       double maxCapitalToLoss = lastSimulatorRecord.getCapitalBalance() * parameters.getStopLossPercentage() / 100d;
       double currentValue = currentLastQuote.getClose().doubleValue() * positionRecord.getOrderAmount();
@@ -159,7 +202,7 @@ public class Simulation {
          sellRecord.setOrderType( "Sell on StopLoss" );
          
          simulationResults.addRecord( sellRecord );
-         positionsMap.put( currentSymbol, null );
+         positionsMap.remove( currentSymbol );
          lastSimulatorRecord = sellRecord;
          sold = true;
          updateStatistics();
@@ -169,7 +212,7 @@ public class Simulation {
    }
 
    private boolean trySell() throws IOException {
-      SimulatorRecord positionRecord = positionsMap.get( currentSymbol );
+      PositionRecord positionRecord = positionsMap.get( currentSymbol );
       if( positionRecord == null ) {
          return false; //There is NOT a position on this symbol
       }
@@ -192,7 +235,7 @@ public class Simulation {
          }
          if ( sellRecord != null ){
             simulationResults.addRecord( sellRecord );
-            positionsMap.put( currentSymbol, null );
+            positionsMap.remove( currentSymbol );
             lastSimulatorRecord = sellRecord;
             sold = true;
             updateStatistics();
@@ -214,13 +257,13 @@ public class Simulation {
    }
 
    private SimulatorRecord sell() throws IOException {
-      SimulatorRecord positionRecord = positionsMap.get( currentSymbol );
+      PositionRecord positionRecord = positionsMap.get( currentSymbol );
       double sellAux = currentLastQuote.getClose().doubleValue() * positionRecord.getOrderAmount();
       double commission = sellAux * parameters.getCommissionPercentage() / 100d;
       double totalEarned = sellAux - commission;
       
       SimulatorRecord sellRecord = new SimulatorRecord();
-      sellRecord.setRelatedRecordId( positionRecord.getId() );
+      sellRecord.setRelatedRecordId( positionRecord.getBuyRecord().getId() );
       sellRecord.setId( lastSimulatorRecord.getId() + 1 );
       sellRecord.setOrderAmount( positionRecord.getOrderAmount() );
       sellRecord.setOrderPrice( currentLastQuote.getClose().doubleValue() );
@@ -229,7 +272,8 @@ public class Simulation {
       sellRecord.setOrderTotalCost( totalEarned );
       sellRecord.setOrderSymbol( currentSymbol );
       sellRecord.setOrderType( "Sell" );
-      sellRecord.setCapitalBalance( lastSimulatorRecord.getCapitalBalance() + totalEarned - (positionRecord.getOrderAmount() * positionRecord.getOrderPrice()) );
+//      sellRecord.setCapitalBalance( lastSimulatorRecord.getCapitalBalance() + totalEarned - (positionRecord.getOrderAmount() * positionRecord.getOrderPrice()) );
+      sellRecord.setCapitalBalance( lastSimulatorRecord.getCapitalBalance() - commission );
       sellRecord.setOperationPerformance( sellRecord.getOrderTotalCost() - positionRecord.getOrderTotalCost() );
       sellRecord.setOperationDays( daysBetween(positionRecord.getOrderDate(), sellRecord.getOrderDate()) );
       return sellRecord;
@@ -275,7 +319,7 @@ public class Simulation {
                buyRecord.setCapitalBalance( lastSimulatorRecord.getCapitalBalance() - commission );
                
                simulationResults.addRecord( buyRecord );
-               positionsMap.put( currentSymbol, buyRecord );
+               positionsMap.put( currentSymbol, new PositionRecord( buyRecord ) );
                lastSimulatorRecord = buyRecord;
                bought = true;
             }else{
@@ -360,7 +404,7 @@ public class Simulation {
    /**
     * @return the positionsMap
     */
-   public synchronized SimulatorRecord getPosition( String symbol ) {
+   public synchronized PositionRecord getPosition( String symbol ) {
       return positionsMap.get( symbol );
    }
 

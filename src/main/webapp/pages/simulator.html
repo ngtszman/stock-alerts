@@ -93,7 +93,7 @@
               createTable(history, "recordsDiv", 
                       ["id","orderDate","relatedRecordId", "capitalBalance","liquity","orderType","orderSymbol","orderAmount","orderPrice","orderTotalCost","operationPerformance","operationDays"], 
                       ["Id","Date","Related Record", "Capital Balance","Liquity","Order Type","Symbol","Amount","Price","Total Cost","Operation Performance","Operation Days"]);
-              createChart(history, "visualisation", "orderDate", "capitalBalance","liquity", ["Capital","Liquity"]);
+              createChart(history, "visualisation", "orderDate", ["capitalBalance","liquity"], ["Capital","Liquity"]);
           } 
 
         	 function strategyResultsToDiv( resultObject ){

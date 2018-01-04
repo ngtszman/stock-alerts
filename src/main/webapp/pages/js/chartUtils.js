@@ -16,25 +16,17 @@ function getDate(d, dateParam) {
 		return new Date(d[dateParam]);
 	}
 }
-
-function getPriceDomain(data, priceParam, price2Param) {
+function getPriceDomain(data, priceParams) {
 	var max = 0;
-	var min = data[0][priceParam];
+	var min = data[0][priceParams[0]];
 	for (var i = 0; i < data.length; i++) {
-		var price = data[i][priceParam];
-		if (price > max) {
-			max = price;
-		}
-		if (price < min) {
-			min = price;
-		}
-		if(price2Param){
-			var price2 = data[i][price2Param];
-			if (price2 > max) {
-				max = price2;
+		for( var j = 0; j < priceParams.length; j++){
+			var price = data[i][priceParams[j]];
+			if (price > max) {
+				max = price;
 			}
-			if (price2 < min) {
-				min = price2;
+			if (price < min) {
+				min = price;
 			}
 		}
 	}
@@ -51,10 +43,11 @@ function createLineGenerator(dateParam, priceParam, xScale, yScale){
 	}).curve(d3.curveBasis)
 }
 
-function createChart(data, containerId, dateParam, priceParam, price2Param, labels) {
+function createChart(data, containerId, dateParam, priceParams, labels) {
 	if( !labels ){
 		labels = [];
 	}
+	var colors = ["green", "blue", "red" ];
 	document.getElementById(containerId).innerHTML = "";
 	// get max and min dates - this assumes data is sorted
 	var maxDate = getDate(data[0], dateParam), minDate = getDate(data[data.length - 1], dateParam);
@@ -74,7 +67,7 @@ function createChart(data, containerId, dateParam, priceParam, price2Param, labe
 	}, xScale = d3.scaleTime().range([ MARGINS.left, WIDTH - MARGINS.right ])
 			.domain([ minDate, maxDate ]), yScale = d3.scaleLinear().range(
 			[ HEIGHT - MARGINS.top, MARGINS.bottom ]).domain(
-			getPriceDomain(data, priceParam, price2Param)), xAxis = d3.axisBottom().scale(
+			getPriceDomain(data, priceParams)), xAxis = d3.axisBottom().scale(
 			xScale), yAxis = d3.axisLeft().scale(yScale);
 
 	vis.append("svg:g").attr("class", "x axis").attr("transform",
@@ -88,26 +81,17 @@ function createChart(data, containerId, dateParam, priceParam, price2Param, labe
 //	}).y(function(d) {
 //		return yScale(d[priceParam]);
 //	}).curve(d3.curveBasis)
-
-	vis.append('svg:path').attr('d', createLineGenerator(dateParam, priceParam,xScale, yScale)(data)).attr('stroke', 'green')
-			.attr('stroke-width', 2).attr('fill', 'none')
 	
-	vis.append("text")
-	   .attr('text-anchor', 'end')
-	   .attr("transform", "translate(" + (WIDTH - MARGINS.right) + "," + (10 + MARGINS.top) + ")")
-	   .attr("dy", ".35em")
-	   .style("fill", "green")
-	   .text(labels[0]? labels[0] : '');
+	for( var i = 0; i < priceParams.length ; i++){ 
+		vis.append('svg:path').attr('d', createLineGenerator(dateParam, priceParams[i],xScale, yScale)(data)).attr('stroke', colors[i])
+		.attr('stroke-width', 2).attr('fill', 'none')
 
-	if( price2Param ){
-	 vis.append('svg:path').attr('d', createLineGenerator(dateParam, price2Param,xScale, yScale)(data)).attr('stroke', 'blue')
-	 .attr('stroke-width', 2) .attr('fill', 'none');
+		vis.append("text")
+		.attr('text-anchor', 'end')
+		.attr("transform", "translate(" + (WIDTH - MARGINS.right) + "," + (10 + MARGINS.top + ( 20 * i)) + ")")
+		.attr("dy", ".35em")
+		.style("fill", colors[i])
+		.text(labels[i]? labels[i] : '');
+	}
 	 
-	 vis.append("text")
-	   .attr('text-anchor', 'end')
-	   .attr("transform", "translate(" + (WIDTH - MARGINS.right) + "," + (10 + MARGINS.top + 20) + ")")
-	   .attr("dy", ".35em")
-	   .style("fill", "blue")
-	   .text(labels[1]? labels[1] : '');
-	}	 
 }
