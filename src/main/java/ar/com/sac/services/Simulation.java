@@ -20,6 +20,8 @@ import java.util.Map;
 
 public class Simulation {
    
+   private static final String INITIAL_INVESTMENT_ORDER_TYPE = "Initial Investment";
+   private static final String CAPITAL_ORDER_TYPE = "Capital";
    private SimulatorParameters parameters;
    private IStockService stockService;
    private ExpressionService expressionService;
@@ -84,7 +86,7 @@ public class Simulation {
       if( positionRecord == null){
          return;
       }
-      if( quote.getClose() != null ){
+      if( quote.getClose() != null && quote.getVolume() > 0){
          positionRecord.setLastPrice(  quote.getClose().doubleValue() );
       }
    }
@@ -93,7 +95,6 @@ public class Simulation {
       if( currentQuoteDate.equals( currentDate ) ){
          return;
       }
-      double positionsSum = 0d;
       //create capitalBalance at currentDate;
       SimulatorRecord capitalRecord = new SimulatorRecord();
       capitalRecord.setId( lastSimulatorRecord.getId() + 1 );
@@ -102,12 +103,8 @@ public class Simulation {
       capitalRecord.setOrderDate( currentDate );
       capitalRecord.setLiquity( lastSimulatorRecord.getLiquity() );
       capitalRecord.setOrderTotalCost( 0 );
-      capitalRecord.setOrderType( "Capital" );
-      for( PositionRecord positionRecord : positionsMap.values()){
-         positionsSum += (positionRecord.getLastPrice() * positionRecord.getOrderAmount());
-      }
-      
-      capitalRecord.setCapitalBalance( lastSimulatorRecord.getLiquity() + positionsSum );
+      capitalRecord.setOrderType( CAPITAL_ORDER_TYPE );
+      capitalRecord.setCapitalBalance( calculateCurrentCapitalBalance() );
       capitalRecord.setOperationPerformance( 0 );
       capitalRecord.setOperationDays( 0 );
 
@@ -116,11 +113,21 @@ public class Simulation {
       currentDate = currentQuoteDate;
    }
 
+   private double calculateCurrentCapitalBalance() {
+      double positionsSum = 0d;
+
+      for( PositionRecord positionRecord : positionsMap.values()){
+         positionsSum += (positionRecord.getLastPrice() * positionRecord.getOrderAmount());
+      }
+      return lastSimulatorRecord.getLiquity() + positionsSum;
+   }
+
    private void completeSimulationResults() {
       simulationResults.setFinalLiquity( lastSimulatorRecord.getLiquity() );
       simulationResults.setFinalCapitalBalance( lastSimulatorRecord.getCapitalBalance() );
       simulationResults.setSymbolPerformances( performanceBySymbolMap.values() );
-      simulationResults.setQuantityOfOperations( simulationResults.getRecords().size() - 1  );
+      //Extracts Capital records
+      simulationResults.setQuantityOfOperations( calculateQuantityOfOperations()  );
       simulationResults.setTotalPerformance( lastSimulatorRecord.getCapitalBalance() - parameters.getInitialCapital() );
       simulationResults.setTotalPerformancePercentage( (lastSimulatorRecord.getCapitalBalance() - parameters.getInitialCapital())*100/parameters.getInitialCapital() );
       int sumOpp = 0;
@@ -130,6 +137,19 @@ public class Simulation {
       simulationResults.setTotalBuyingOpportunitiesMissed( sumOpp );
    }
 
+   private int calculateQuantityOfOperations() {
+      int count = 0;
+      String orderType;
+      for(SimulatorRecord record : simulationResults.getRecords()){
+         orderType = record.getOrderType();
+         if(!CAPITAL_ORDER_TYPE.equals( orderType ) && !INITIAL_INVESTMENT_ORDER_TYPE.equals( orderType )){
+            count++;
+         }
+      }
+      
+      return count;
+   }
+
    private void initSimulationVariables() throws IOException {
       lastSimulatorRecord = new SimulatorRecord();
       currentDate = new GregorianCalendar(parameters.getYearFrom(),0,1);
@@ -137,7 +157,7 @@ public class Simulation {
       lastSimulatorRecord.setId( 0 );
       lastSimulatorRecord.setCapitalBalance( parameters.getInitialCapital() );
       lastSimulatorRecord.setLiquity( parameters.getInitialCapital() );
-      lastSimulatorRecord.setOrderType( "Initial Investment" );
+      lastSimulatorRecord.setOrderType( INITIAL_INVESTMENT_ORDER_TYPE );
       simulationResults.addRecord( lastSimulatorRecord );
 
       List<Quote> quotesAux;
@@ -349,7 +369,8 @@ public class Simulation {
          aux = lastSimulatorRecord.getLiquity();
       }
       // if there is no chance to take another position
-      if( lastSimulatorRecord.getLiquity() < parameters.getPositionMinimumValue()*2 ){
+      if( lastSimulatorRecord.getLiquity() < parameters.getPositionMinimumValue()*2 
+               || (lastSimulatorRecord.getLiquity() - aux) < parameters.getPositionMinimumValue()){
          aux = lastSimulatorRecord.getLiquity();
       }
       
