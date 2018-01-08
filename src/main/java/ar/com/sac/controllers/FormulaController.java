@@ -210,4 +210,14 @@ public class FormulaController {
       
       return new ResponseEntity<String>( df.format( formulaService.getRateOfChange( period, symbol )), HttpStatus.OK );
    }
+   
+   @RequestMapping(value= "/adtv", method = RequestMethod.GET)
+   public ResponseEntity<String> adtv(@RequestParam(value = "period", required=false) Integer period, 
+                                          @RequestParam("symbol") String symbol ) throws IOException {
+      if(period == null){
+         period = 30;
+      }
+      
+      return new ResponseEntity<String>( formulaService.getAverageDailyTradingVolume( period, symbol ).toString(), HttpStatus.OK );
+   }
 }

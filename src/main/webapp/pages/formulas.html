@@ -115,6 +115,15 @@
              httpGetAsync( url, function( result ){ document.getElementById( "rocResult" ).innerHTML = result + '%';  } );
          }
 
+         function calculateADTV( event ){
+             //avoids default submit process
+             event.preventDefault();
+             var tickerInput = document.getElementById( "adtvTickerSymbol" );
+             var periodInput = document.getElementById( "adtvPeriod" );
+             var url = "/stock-alerts/formulas/adtv?symbol=" + tickerInput.value + "&period=" + periodInput.value;
+             httpGetAsync( url, function( result ){ document.getElementById( "adtvResult" ).innerHTML = result;  } );
+         }
+
          function calculateMACD( event ){
              //avoids default submit process
              event.preventDefault();
@@ -220,7 +229,7 @@
             </div>
             <div class="panel-body">
               <div class="row">
-		           <div class="col-md-6">
+		           <div class="col-md-4">
 		               <div class="panel panel-default">
 		                  <div class="panel-heading">Price</div>
 		                  <div class="panel-body">
@@ -239,7 +248,7 @@
 		               </div>
 		           </div>
            
-		           <div class="col-md-6">
+		           <div class="col-md-4">
 		               <div class="panel panel-default">
 		                  <div class="panel-heading">Volume</div>
 		                  <div class="panel-body">
@@ -256,8 +265,31 @@
 		                     </form>
 		                  </div>
 		               </div>
-		            </div>
-		          </div>
+		           </div>
+		           
+		           <div class="col-md-4">
+                     <div class="panel panel-default">
+                        <div class="panel-heading">Average Daily Trading Volume</div>
+                        <div class="panel-body">
+                           <form data-toggle="validator" class="form" name="adtvForm"  id="adtvForm" 
+                                 onsubmit="calculateADTV(event)">
+                             <div class="form-group">
+                               <label for="adtvTickerSymbol">Ticker Symbol</label>
+                               <input type="text" class="form-control" id="adtvTickerSymbol" placeholder="TSLA" required data-minlength="1">
+                             </div>
+                             <div class="form-group">
+                                   <label for="adtvPeriod">Period</label>
+                                   <input class="form-control" type="number"  min="1" value="30" id="adtvPeriod">
+                                 </div>
+                             <div class="form-group">
+                               <button type="submit" class="btn btn-primary">Calculate</button>
+                             </div>
+                             <div class="form-group formula-result" id="adtvResult"></div>
+                           </form>
+                        </div>
+                     </div>
+                 </div>
+		        </div>
             </div>
           </div>
 	       

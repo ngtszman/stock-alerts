@@ -2,6 +2,7 @@ package ar.com.sac.services;
 
 import ar.com.sac.model.Quote;
 import ar.com.sac.model.formulas.Average;
+import ar.com.sac.model.formulas.AverageDailyTradingVolume;
 import ar.com.sac.model.formulas.AverageTrueRange;
 import ar.com.sac.model.formulas.AverageTrueRangePercentage;
 import ar.com.sac.model.formulas.BollingerBandLower;
@@ -132,6 +133,11 @@ public class FormulaService {
    public BigDecimal getRateOfChange(int period, String symbol) throws IOException{
       List<Quote> quotes = stockService.getHistory( symbol );
       return new RateOfChange( period, quotes ).calculate();
+   }
+   
+   public BigDecimal getAverageDailyTradingVolume(int period, String symbol) throws IOException{
+      List<Quote> quotes = stockService.getHistory( symbol );
+      return new AverageDailyTradingVolume( period, quotes ).calculate();
    }
    
 
