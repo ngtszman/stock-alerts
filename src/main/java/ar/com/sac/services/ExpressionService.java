@@ -1,5 +1,6 @@
 package ar.com.sac.services;
 
+import ar.com.sac.model.Alert;
 import ar.com.sac.model.formulas.FormulaFactory;
 import ar.com.sac.model.operations.DummyOperator;
 import ar.com.sac.model.operations.OperationConstantValue;
@@ -42,8 +43,15 @@ public class ExpressionService {
       return parseExpression( expression, stockService );
    }
    
-   public Operator parseExpression( String expression, IStockService stockService ) {
+   public Operator parseAlertExpression( String expression, Alert alert, IStockService stockService ) {
       expression = normalizeExpression(expression);
+      expression = expression.replaceAll( "\\[SYMBOL\\]", alert.getSymbol() );
+      return parseExpression( expression, stockService );
+   }
+   
+   
+   
+   private Operator parseExpression( String expression, IStockService stockService ) {
       String[] andSplit = expression.split( "&&" );
       Operator result;
       if(andSplit.length == 1){
