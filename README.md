@@ -32,6 +32,7 @@ Configure your financial alerts from your favorite stock market and receive noti
 * ATR(14,GOOGL)>1
 * ATRP(14,GOOGL)>2
 * ROC(14,TSLA)>0
+* ADTV(30,TSLA)>500000
 
 ## Formulas
 * __SMA__: Simple Moving Average. Parameters: period and symbol.
@@ -39,6 +40,7 @@ Configure your financial alerts from your favorite stock market and receive noti
 * __RSI__: Relative Strength Index. Parameters: period and symbol.
 * __PRICE__: Last price of a single stock. Parameter: symbol.
 * __VOLUME__: Last volume of a single stock. Parameter: symbol.
+* __ADTV__: Average Daily Trading Volume. Parameters: period and symbol.
 * __MACD__: Moving Average Convergence/Divergence. Parameters: fastPeriod, slowPeriod and symbol.
 * __MACD_SIGNAL_LINE__: Signal Line value of Moving Average Convergence/Divergence. Parameters: fastPeriod, slowPeriod, signalPeriod and symbol.
 * __MACD_HISTOGRAM__: Histogram value of Moving Average Convergence/Divergence. Parameters: fastPeriod, slowPeriod, signalPeriod and symbol.
@@ -130,6 +132,8 @@ Configure your financial alerts from your favorite stock market and receive noti
   * period parameter is optional, default value is 14
 * GET /stock-alerts/formulas/roc?period=14&symbol=GOOGL 
   * period parameter is optional, default value is 14
+* GET /stock-alerts/formulas/adtv?period=30&symbol=GOOGL 
+  * period parameter is optional, default value is 30
 
 
 #### Alerts
