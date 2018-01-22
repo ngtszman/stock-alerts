@@ -8,7 +8,7 @@
 		<script src="https://cdn.datatables.net/plug-ins/1.10.13/sorting/datetime-moment.js"></script>
  */
 
-function createTable( data, parentContainerId, columns, columnNames, onClickCallback ){
+function createTable( data, parentContainerId, columns, columnNames, onClickCallback, preSearch, preOrder ){
      var table = document.createElement( "table" );
      table.className = "table table-striped table-bordered";
      table.cellspacing = "0";
@@ -44,6 +44,14 @@ function createTable( data, parentContainerId, columns, columnNames, onClickCall
      //Automatically detect argentinian date format and sort correctly
      $.fn.dataTable.moment( 'DD/MM/YYYY' );
      var dataTable = $(table).DataTable();
+     
+     if(preSearch){
+    	 dataTable.search( preSearch ).draw();
+     }
+     
+     if(preOrder){
+    	 dataTable.order( preOrder ).draw();
+     }
      
      //Selección de la fila
      $( "#" + table.id + ' tbody').on( 'click', 'tr', function () {

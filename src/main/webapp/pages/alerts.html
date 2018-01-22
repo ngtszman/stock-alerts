@@ -45,6 +45,12 @@
          }
 
          function loadAlerts(){
+             //remeber all table user options
+             var preSearch, preOrder;
+             if(dataTable){
+                 preSearch = dataTable.search();
+                 preOrder = dataTable.order();
+             }
              $("#alertsDiv").empty();
         	    httpGetAsync( "/stock-alerts/alerts", function( results ){
         	    	var resultDiv = document.getElementById( "alertsDiv" );
@@ -56,7 +62,9 @@
                 	    	["Id", "Active", "Expression", "Name", "Description", "Send Email", "Symbol", "Opposed Alert Id"],
                 	    	function( data ){
         	    		         completeForm(data);
-        	    		      } );
+        	    		      }, 
+        	    		      preSearch,
+        	    		      preOrder);
              }, "alertsDiv");
         	    
          }
