@@ -45,6 +45,10 @@ public class YahooFinanceService {
       Map<String, List<HistoricalQuote>> resultMap = new HashMap<String, List<HistoricalQuote>>();
       for(String symbol : symbols){
          Stock stock = map.get( symbol );
+         if( stock == null){
+            System.err.println( "Could not get History from symbol: " + symbol );
+            continue;
+         }
          resultMap.put( symbol, stock.getHistory( from, to, Interval.DAILY ) );
       }
       return resultMap;
