@@ -6,6 +6,7 @@ import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import javax.annotation.PostConstruct;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
@@ -46,7 +47,7 @@ public class PostConstructInitBean {
       System.setProperty("https.proxyHost", httpsProxyHost);
       System.setProperty("https.proxyPort", httpsProxyPort);
 
-      if (proxyUser != null && proxyPassword != null) {
+      if (!StringUtils.isEmpty( proxyUser )) {
          System.out.println( "Using Proxy User: " + proxyUser );
           Authenticator.setDefault(
             new Authenticator() {
@@ -76,7 +77,6 @@ public class PostConstructInitBean {
          in.close();
          
       } catch (Exception e) {
-         // TODO Auto-generated catch block
          e.printStackTrace();
       }
   }
